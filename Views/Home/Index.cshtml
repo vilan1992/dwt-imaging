@@ -1,0 +1,261 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container-fluid">
+
+    <div class="row mb-2">
+        <div class="col-sm-2">
+
+        </div>
+        <div class="col-sm-3">
+            <button class="btn btn-outline-secondary btn-lg fas fa-print" onclick="AcquireImage()"></button>
+            @*<input type="file" id="fileUpload" class="btn btn-outline-primary" onclick="AcquireLocalImage()"/>*@
+            <button class="btn btn-outline-secondary btn-lg fas fa-folder-open" id="myFile" onclick="myFunction()"></button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2">
+            <form>
+                <div class="form-group">
+                    <label for="ID">ID </label>
+                    <input type="text" class="form-control" ng-model="document.ID">
+                </div>
+                <div class="form-group">
+                    <label for="File Name">File Name</label>
+                    <input type="text" class="form-control" ng-model="document.fileName" required>
+                </div>
+                <div class="form-group">
+                    <label for="File Location">File Location</label>
+                    <input type="text" class="form-control" ng-model="document.fileLocation" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="Meridian Object ID">Meridian Object ID</label>
+                    <input type="text" class="form-control" ng-model="document.meridianObjectID">
+                </div>
+                <div class="form-group">
+                    <label for="Encryption Token">Encryption Token</label>
+                    <input type="text" class="form-control" ng-model="document.encryptionToken">
+                </div>
+
+                <button class="btn btn-secondary" ng-click="SaveFields()">Save</button>
+            </form>
+        </div>
+        <div class="col-sm-8 w-100 h-100" id="dwt-container">
+
+        </div>
+        <div class="col-sm-2 w-100 h-100">
+            <h3>Saved Files</h3>
+            <ul>
+                <li class="fileNameListView" ng-repeat="name in fileNameArrayFinal" ng-click="loadFile(name)" ><button class="btn btn-outline-dark">{{name}}</button></li>
+            </ul>
+
+        </div>
+    </div>
+    </div>
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Save Alert..</h4>
+                    <button type="button" class="close" data-dismiss="modal">×</button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+                    Saved Sucessfully in the path D:\dwt\dwtDotCore\Upload
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- DWT script here -->
+    <script src="~/lib/dwt/dynamsoft.webtwain.initiate.js"></script>
+    <script src="~/lib/dwt/dynamsoft.webtwain.config.js"></script>
+    <script>
+        var app = angular.module("myApp", []);
+        app.controller("myCtrl", function ($scope) {
+            $scope.document = { ID: "1", fileName: "", fileLocation: "D:\\dwt\\dwtDotCore\\Upload", meridianObjectID: "", encryptionToken: "" };
+            if (localStorage) {
+                $scope.document.ID = localStorage.length + 1;
+                $scope.fileNameArrayFinal = [];
+                var arr = new Array();
+                var fileNameArray = [];
+                var l = localStorage.length;
+                for (i = 0; i <= l; i++) {
+                    var arr1 = new Array();
+                    arr1 = JSON.parse(localStorage.getItem(i));
+                    if (arr1 != null) {
+                        arr = arr1;
+                       fileNameArray.push(arr.fileName);
+                        //console.log("Poped arr1", arr1);
+                       //console.log("Poped arr", arr);
+                    }
+
+                   // console.log("Poped arr1", arr1);
+                }
+                console.log("Poped arr", arr.ID);
+                console.log("Poped fileName", fileNameArray);
+                $scope.fileNameArrayFinal = fileNameArray;
+                console.log("fileNameArrayFinal arr", $scope.fileNameArrayFinal);
+            }
+            $scope.loadFile = function (name) {
+                console.log("fileName", name);
+                loadLocal(name);
+            }
+            $scope.increment = function () {
+                $scope.document.ID = parseInt($scope.document.ID)+1;
+                //$scope.document.meridianObjectID = parseInt($scope.document.meridianObjectID) + 1;
+                console.log("saved", $scope.document.ID);
+            }
+           $scope.SaveFields = function () {
+            console.log("saved", $scope.document);
+            //localStorage.removeItem("name");
+            localStorage.setItem($scope.document.ID, JSON.stringify($scope.document));
+            localStorage.setItem('name', $scope.document.fileName);
+
+           // $scope.document = { ID: "1", fileName: "", fileLocation: "D:\\dwt\\dwtDotCore\\Upload", meridianObjectID: "1", encryptionToken: "" };
+           // location.reload();
+            //localStorage.setItem('user', JSON.stringify(user));
+            //localStorage.setItem("ID", $scope.document.ID);
+            //localStorage.setItem("fileName", $scope.document.fileName);
+            //localStorage.setItem("fileLocation", $scope.document.fileLocation);
+            //localStorage.setItem("meridianObjectID", $scope.document.meridianObjectID);
+            //localStorage.setItem("encryptionToken", $scope.document.encryptionToken);
+            Upload();
+            $("#myModal").modal();
+           // $scope.increment();
+            location.reload();
+           // initDWT();
+        };
+    });
+
+    var DWObj;
+        var viewerWidth = 960; viewerHeight = 620;
+    var containerName = 'dwt-container';
+        Dynamsoft.DWT.ResourcesPath = 'lib/dwt';
+        //Dynamsoft.DWT.ProductKey = "t0068MgAAAD8qvLQcieuS7F2uHcR4XC/+SYzCZIzBejm90VpLPA3PWtdgI6NnZY/UwYBGZ/FGmk6ixM1XiL9MS+T1js16MQ8=";
+        Dynamsoft.DWT.ProductKey = "t0152KQMAAIKyZctRhiA/RRd3F93Sypp4yHbAur2xzdgdV44KiFKtiB4F9JALEcCR5hs1cQ1l8lSfh20zPFywlL3UDoVX9aaGNDYMx1hbjpZJVlJn+DSvaqQZ3Mz5m/rXnXnjfBjM6QxPGIlN3c/YuJl/O2Q/c294wkhs3Myd8fes9kn6COhomWlkeMJIbFrmq0mZEtKqXwSpnps=";
+        function initDWT() {
+            console.log('initDWT');
+            Dynamsoft.DWT.UseLocalService = true;
+            Dynamsoft.DWT.AutoLoad = true;
+            Dynamsoft.DWT.Containers = [{ ContainerId: containerName, Width: viewerWidth, Height: viewerHeight }];
+            Dynamsoft.DWT.RegisterEvent('OnWebTwainReady', function () {
+                DWObj = Dynamsoft.DWT.GetWebTwain(containerName);
+               // DWObj.LoadImageEx('', -1);
+                if (DWObj) {
+                    DWObj.Width = viewerWidth;
+                    DWObj.Height = viewerHeight;
+                    /* DWObj.ShowImageEditor("dwtcontrolContainerLargeViewer", 750, 600);*/
+                    var thumbnailViewerSettings = {
+                        location: 'right',
+                        size: '30%',
+                        columns: 1,
+                        rows: 3,
+                        scrollDirection: 'vertical', // 'horizontal'
+                        pageMargin: 10,
+                        background: "rgb(255, 255, 255)",
+                        border: '',
+                        allowKeyboardControl: true,
+                        allowPageDragging: true,
+                        allowResizing: false,
+                        showPageNumber: false,
+                        pageBackground: "transparent",
+                        pageBorder: "1px solid rgb(238, 238, 238)",
+                        hoverBackground: "rgb(239, 246, 253)",
+                        hoverPageBorder: "1px solid rgb(238, 238, 238)",
+                        placeholderBackground: "rgb(251, 236, 136)",
+                        selectedPageBorder: "1px solid rgb(125,162,206)",
+                        selectedPageBackground: "rgb(199, 222, 252)"
+                    };
+                    var thumbnailViewer = DWObj.Viewer.createThumbnailViewer(thumbnailViewerSettings);
+                    thumbnailViewer.show();
+                    DWObj.Viewer.show();
+                    DWObj.Viewer.showPageNumber = true;
+                    DWObj.Viewer.singlePageMode = false;
+                    //DWObj.Viewer.setViewMode(2, 2);
+                    DWObj.MouseShape = true;
+
+                    @* addThumbnailViewer(); *@
+                }
+            });
+        }
+    initDWT();
+    function AcquireImage() {
+        if (DWObj) {
+            console.log('SelectSource', DWObj);
+            if (DWObj.UseLocalService) {
+                DWObj.SelectSource(function () {
+                    var OnAcquireImageSuccess = OnAcquireImageFailure = function () {
+                        DWObj.CloseSource()
+                    }
+                    DWObj.OpenSource()
+                    DWObj.IfShowUI = false;
+                    DWObj.IfFeederEnabled = true;// Use the document feeder to scan in batches
+                    DWObj.IfDuplexEnabled = false;// Scan in Simplex mode (only 1 side of the page)
+                    //DWObj.PixelType = EnumDWT_PixelType.TWPT_GRAY; // Scan pages in GRAY
+                    DWObj.Resolution = 200;
+                    DWObj.IfDisableSourceAfterAcquire = true;
+                    DWObj.AcquireImage(OnAcquireImageSuccess, OnAcquireImageFailure)
+                }, function () {
+                    console.log('SelectSource failed')
+                })
+            } else {
+                DWObj.LoadImageEx('', -1)
+            }
+        }
+        }
+        //$('#fileUpload').on('change', function () {
+        //    var filePath = $(this).val();
+        //    console.log(filePath);
+        //    alert('', filePath);
+        //});
+        function myFunction() {
+            console.log('path1', DWObj);
+            DWObj.IfShowFileDialog = true;
+            //DWObj.Addon.PDF.SetResolution(200);
+            //DWObj.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO);
+            DWObj.LoadImageEx('', Dynamsoft.DWT.EnumDWT_ImageType.IT_ALL);
+            console.log('path2', DWObj );
+        }
+    function  Upload() {
+        let uploadFormat = Dynamsoft.DWT.EnumDWT_UploadDataFormat.Binary
+
+        if (DWObj) {
+            var name = localStorage.getItem('name');
+            console.log('SelectSourcetest', name);
+            var nameSave = name.concat('.pdf');
+            console.log('SelectSource', nameSave);
+            var pathPrefix = "D:\\dwt\\dwtDotCore\\Upload\\";
+            var path = pathPrefix.concat(nameSave);
+            //console.log('SelectSource', path);
+            DWObj.IfShowFileDialog = false;
+            DWObj.SaveAllAsPDF(path);
+               }
+        }
+        function loadLocal(name) {
+            var nameSave = name.concat('.pdf');
+            var pathPrefix = "D:\\dwt\\dwtDotCore\\Upload\\";
+            var path = pathPrefix.concat(nameSave);
+            console.log('SelectSource', path);
+            DWObj.LoadImage(path, optionalAsyncSuccessFunc, optionalAsyncFailureFunc);
+           // DWObject.LoadImage("C:\\WebTWAIN\\Images\\ImageData.jpg", optionalAsyncSuccessFunc, optionalAsyncFailureFunc);
+            function optionalAsyncSuccessFunc() {
+                //console.log(‘successful’);
+            }
+            function optionalAsyncFailureFunc(errorCode, errorString) {
+                alert(errorString);
+            }
+
+
+        }
+    </script>
